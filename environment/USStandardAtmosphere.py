@@ -1,4 +1,4 @@
-class isoStandardAtmosphere(WorkingEnvironment)
+class USStandardAtmosphere(WorkingEnvironment)
 """
 isoStandardAtmosphere calculates atmospheric properties based on the 1976 ISO model.
 

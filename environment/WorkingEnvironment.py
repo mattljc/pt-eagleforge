@@ -1,16 +1,15 @@
-class WorkingEnvironment():
 """
 WorkingEnvironment defines an abstract superclass for all working fluid environments.
-
 """
+class WorkingEnvironment:
 
-	#Instance variables set to strings
-	altitude = 'empty'
-	temperature = 'empty'
-	density = 'empty'
-	pressure = 'empty'
-	speed_of_sound = 'empty'
-	kinematic_viscosity = 'empty'
+	def __init__(self,alt=0):
+		self.altitude = alt
+		self.temperature = None
+		self.density = None
+		self.pressure = None
+		self.speed_of_sound = None
+		self.kinematic_viscosity = None
 	
 	def makeEnvironment(self):
 		raise NotImplementedError
@@ -31,3 +30,12 @@ WorkingEnvironment defines an abstract superclass for all working fluid environm
 	def getMachNumber(self, velocity):
 		ma_num = velocity / speed_of_sound
 		return ma_num
+
+#Testing script for this module run as standalone
+if __name__ == '__main__':
+	a = WorkingEnvironment()
+	print(a.altitude)
+	print(a.temperature)
+
+	b = WorkingEnvironment(1000)
+	print(b.altitude)
