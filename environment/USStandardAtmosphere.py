@@ -1,28 +1,34 @@
-"""
-USStandardAtmosphere calculates atmospheric properties based on the 1975 model.
-Go to wikipedia for more details.
 
-ALL UNITS ARE SI BASE UNITS
-
-"""
 
 import math
 from WorkingAtmosphere import WorkingAtmosphere
+import logistics.Exceptions as exceptions
 
 class USStandardAtmosphere(WorkingAtmosphere):
+	"""
+	USStandardAtmosphere calculates atmospheric properties based on the 1975 model, implemented using barometric formulae
+	Go to wikipedia for more details.
+
+	ALL UNITS ARE SI BASE UNITS
+	"""
 
 	#Constructors
 	def __init__(self, alt=0):
+		"""
+		Calls the superclass constructor to initialize the data, then constructs the model.
+		Also accepts an optional temperature offset. 
+		"""
 		super().__init__(alt)		
 		#self.temperature_offset = tOffset
 		self.temperature_offset = 0
-		
 		self.makeEnvironment()
 
 
 	#Methods
 	def makeEnvironment(self):
-
+		"""
+		Overloads the method in the superclass, defines the model using the barometric formulae and data from the model.
+		"""
 		base_layer = 0
 		self.gravity = 9.81
 
@@ -45,7 +51,7 @@ class USStandardAtmosphere(WorkingAtmosphere):
 		__visc_sutherland_const = 120.0
 
 		if self.altitude > __model_max_altitude:
-			raise ModelExtrapolationError
+			raise exceptions.ModelExtrapolationException('Maximum allowed altitude is %s m' %(__model_max_altitude))
 		
 		layerKeys = __atmosphere_layers.keys()
 		layerKeys = list(layerKeys)
@@ -71,7 +77,7 @@ class USStandardAtmosphere(WorkingAtmosphere):
 
 		self.dynamic_viscosity = __visc_lambda * self.temperature**(3/2) / (self.temperature + __visc_sutherland_const)
 
-
+#Testing script
 if __name__ == '__main__':
 	print('\n\n')
 	bookTempSL = 288.16
@@ -109,3 +115,6 @@ if __name__ == '__main__':
 	output = 'T = %s ... rho = %s' % (dd.temperature, dd.density)	
 	output += '\n50K: temp error = %s ... dens error = %s' % (tempError50K, densError50K)
 	print(output)
+	print(dd)
+
+	ee = USStandardAtmosphere(1000000)
