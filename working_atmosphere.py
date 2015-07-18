@@ -1,5 +1,6 @@
 import numpy as np
 import helpers.extra_exceptions
+
 """working_atmosphere defines the interface for any working environment for
 vehicles that operate in a fluid.
 
@@ -35,7 +36,7 @@ class WorkingAtmosphere(object):
 
 		Be careful to ensure consistant units with the model in use.
 		"""
-		dynamic_press = 0.5 * self.density * velocity**2
+		dynamic_press = 0.5 * self.Density * velocity**2
 		return dynamic_press
 
 	def get_reynolds_number(self, velocity, refLength):
@@ -44,7 +45,7 @@ class WorkingAtmosphere(object):
 
 		Be careful to ensure consistant units with the model in use.
 		"""
-		re_num = self.density * velocity * refLength / self.dynamic_viscosity
+		re_num = self.Density * velocity * refLength / self.Dynamic_viscosity
 		return re_num
 
 	def get_mach_number(self, velocity):
@@ -53,7 +54,7 @@ class WorkingAtmosphere(object):
 
 		Be careful to ensure constant units with the model in use.
 		"""
-		ma_num = velocity / self.speed_of_sound
+		ma_num = velocity / self.Speed_of_sound
 		return ma_num
 
 	### SYSTEM OVERLOADS
@@ -65,33 +66,31 @@ class WorkingAtmosphere(object):
 		return out
 
 class USStandardAtmosphere(WorkingAtmosphere):
-	"""
-	USStandardAtmosphere calculates atmospheric properties based on the 1975
+	"""USStandardAtmosphere calculates atmospheric properties based on the 1975
 	model, implemented using barometric formulae. See wikipedia for more
 	details.
 
 	ALL UNITS ARE SI BASE UNITS
 	"""
 
-	#Constructors
-	def __init__(self, alt=0):
-		"""
-		Calls the superclass constructor to initialize the data, then constructs the model.
+	def __init__(self, alt=0, temp_offset=0):
+		"""Calls the superclass constructor to initialize the data, then
+		constructs the model.
+
 		Also accepts an optional temperature offset.
 		"""
-		WorkingAtmosphere.__init__(alt)
+		WorkingAtmosphere.__init__(self, alt)
 		#self.temperature_offset = tOffset
-		self.temperature_offset = 0
-		self.makeEnvironment()
+		self.Temperature_offset = temp_offset
+		self.make_environment()
 
-
-	#Methods
-	def makeEnvironment(self):
+	def make_environment(self):
 		"""
-		Overloads the method in the superclass, defines the model using the barometric formulae and data from the model.
+		Overloads the method in the superclass, defines the model using the
+		barometric formulae and data from the model.
 		"""
 		base_layer = 0
-		self.gravity = 9.81
+		self.Gravity = 9.81
 
 		#Private data for to define model
 		__model_max_altitude = 87000
@@ -111,76 +110,85 @@ class USStandardAtmosphere(WorkingAtmosphere):
 		__visc_lambda = 1.51204129e-6
 		__visc_sutherland_const = 120.0
 
-		if self.altitude > __model_max_altitude:
-			raise exceptions.ModelExtrapolationException('Maximum allowed altitude is %s m' %(__model_max_altitude))
+		if self.Altitude > __model_max_altitude:
+			raise helpers.extra_exceptions.ModelExtrapolationException(
+			'Exceeded model maximum altitude')
 
 		layerKeys = __atmosphere_layers.keys()
 		layerKeys = list(layerKeys)
 		layerKeys.sort()
 		for layer in layerKeys:
-			if self.altitude >= layer:
+			if self.Altitude >= layer:
 				base_layer = __atmosphere_layers[layer]
 				base_alt = layer
 		base_temp = __layer_base_data[base_layer]['temp']
 		base_lapse = __layer_base_data[base_layer]['lapse']
 		base_press = __layer_base_data[base_layer]['press']
 
-		self.temperature = base_temp + base_lapse * (self.altitude - base_alt) + self.temperature_offset
+		self.Temperature = base_temp + base_lapse * (self.Altitude - base_alt)
+		+ self.Temperature_offset
 
 		if base_lapse == 0:
-			self.pressure = base_press * math.exp((-1 * self.gravity * __air_molar_mass * (self.altitude - base_alt)) / (__gas_constant * base_temp))
+			self.Pressure = base_press * \
+				np.exp( (-self.Gravity*__air_molar_mass*(self.Altitude-base_alt)) \
+				/(__gas_constant*base_temp))
 		else:
-			self.pressure = base_press * (base_temp / self.temperature) ** (self.gravity * __air_molar_mass / __gas_constant / base_lapse)
+			self.Pressure = base_press * \
+				(base_temp/self.Temperature) ** \
+				(self.Gravity*__air_molar_mass/__gas_constant/base_lapse)
 
-		self.density = __air_molar_mass * self.pressure / __gas_constant / self.temperature
-
-		self.speed_of_sound = (__specific_heat_ratio * __gas_constant * self.temperature / __air_molar_mass) ** 0.5
-
-		self.dynamic_viscosity = __visc_lambda * self.temperature**(3/2) / (self.temperature + __visc_sutherland_const)
+		self.Density = __air_molar_mass*self.Pressure / \
+			__gas_constant/self.Temperature
+		self.Speed_of_sound = np.sqrt(__specific_heat_ratio*__gas_constant* \
+			self.Temperature/__air_molar_mass)
+		self.Dynamic_viscosity = __visc_lambda*self.Temperature**(3.0/2.0)/ \
+			(self.Temperature+__visc_sutherland_const)
 
 #Testing script
 if __name__ == '__main__':
 
 	a = WorkingAtmosphere(1000)
-	a.makeEnvironment()
 	print(a)
 
 	print('\n\n')
 	bookTempSL = 288.16
 	bookDensSL = 1.2250
 	aa = USStandardAtmosphere()
-	tempErrorSL = (aa.temperature - bookTempSL) / bookTempSL
-	densErrorSL = (aa.density - bookDensSL) / bookDensSL
-	output = 'T = %s ... rho = %s' % (aa.temperature, aa.density)
+	tempErrorSL = (aa.Temperature - bookTempSL) / bookTempSL
+	densErrorSL = (aa.Density - bookDensSL) / bookDensSL
+	output = 'T = %.5f ... rho = %.5f' % (aa.Temperature, aa.Density)
 	output += '\nSL: temp error = %.5f ... dens error = %.5f' % (tempErrorSL, densErrorSL)
 	print(output)
 
 	bookTemp5K = 255.69
 	bookDens5K = 7.6343e-1
 	bb = USStandardAtmosphere(5000)
-	tempError5K = (bb.temperature - bookTemp5K) / bookTemp5K
-	densError5K = (bb.density - bookDens5K) / bookDens5K
-	output = 'T = %s ... rho = %s' % (bb.temperature, bb.density)
+	tempError5K = (bb.Temperature - bookTemp5K) / bookTemp5K
+	densError5K = (bb.Density - bookDens5K) / bookDens5K
+	output = 'T = %.5f ... rho = %.5f' % (bb.Temperature, bb.Density)
 	output += '\n5K: temp error = %.5f ... dens error = %.5f' % (tempError5K, densError5K)
 	print(output)
 
 	bookTemp20K = 216.66
 	bookDens20K = 8.8909e-2
 	cc = USStandardAtmosphere(20000)
-	tempError20K = (cc.temperature - bookTemp20K) / bookTemp20K
-	densError20K = (cc.density - bookDens20K) / bookDens20K
-	output = 'T = %s ... rho = %s' % (cc.temperature, cc.density)
+	tempError20K = (cc.Temperature - bookTemp20K) / bookTemp20K
+	densError20K = (cc.Density - bookDens20K) / bookDens20K
+	output = 'T = %.5f ... rho = %.5f' % (cc.Temperature, cc.Density)
 	output += '\n20K: temp error = %.5f ... dens error = %.5f' % (tempError20K, densError20K)
 	print(output)
 
 	bookTemp50K = 270.65
 	bookDens50K = 0.000978
 	dd = USStandardAtmosphere(50000)
-	tempError50K = (dd.temperature - bookTemp50K) / bookTemp50K
-	densError50K = (dd.density - bookDens50K) / bookDens50K
-	output = 'T = %s ... rho = %s' % (dd.temperature, dd.density)
-	output += '\n50K: temp error = %s ... dens error = %s' % (tempError50K, densError50K)
+	tempError50K = (dd.Temperature - bookTemp50K) / bookTemp50K
+	densError50K = (dd.Density - bookDens50K) / bookDens50K
+	output = 'T = %.5f ... rho = %.5f' % (dd.Temperature, dd.Density)
+	output += '\n50K: temp error = %.5f ... dens error = %.5f' % (tempError50K, densError50K)
 	print(output)
 	print(dd)
 
-	ee = USStandardAtmosphere(1000000)
+	try:
+		ee = USStandardAtmosphere(1000000)
+	except helpers.extra_exceptions.ModelExtrapolationException:
+		print('Caught extrapolation error')
