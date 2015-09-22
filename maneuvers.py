@@ -54,6 +54,10 @@ class SteadyLevel(Maneuver):
         return (ke + pe).to(units.joule/units.kilogram)
 
 class LevelTurn(Maneuver):
+    """LevelTurn is a banked turn at constant speed and altitude.
+
+    It assumes that it is receiving all its inputs as pint objects.
+    """
 
     def __init__(self, radius, delta_hdg, alt, vel):
         self.Altitude = alt.to(units.meter)

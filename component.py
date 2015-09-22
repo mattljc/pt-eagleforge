@@ -18,8 +18,8 @@ class Component(object):
     def __init__(self, name, mass, cg_loc, inertias):
         self.Name = name
         self.Mass = mass.to(units.kilogram)
-        self.CGLocation = cg_loc.to(units.meter)
-        self.Inertias = inertias.to(units.kilogram * units.meter**3)
+        self.CenterOfGravity = cg_loc.to(units.meter)
+        self.MomentOfInetia = inertias.to(units.kilogram * units.meter**3)
 
 class LiftingSurface(Componenet):
     """LiftingSurfaces generate aerodynamic lift to counteract the weigth of
